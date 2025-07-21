@@ -40,6 +40,23 @@ export async function post(url, data, isFormData = false) {
   return res.json();
 }
 
+export async function patch(url, data, isFormData = false) {
+  const token = localStorage.getItem('token');
+  const headers = isFormData
+    ? { Authorization: `Bearer ${token}` }
+    : {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      };
+  const res = await fetch(API_BASE + url, {
+    method: 'PATCH',
+    headers,
+    body: isFormData ? data : JSON.stringify(data),
+  });
+  if (!res.ok) throw await res.json();
+  return res.json();
+}
+
 export async function del(url) {
   const token = localStorage.getItem('token');
   const res = await fetch(API_BASE + url, {

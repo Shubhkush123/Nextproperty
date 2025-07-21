@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { post } from '../utils/api'; // aapke api.js se
+import { post } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 
 const AddProperty = () => {
@@ -7,21 +7,27 @@ const AddProperty = () => {
     title: '',
     description: '',
     price: '',
-    type: '',
-    subCategory: '',
     location: '',
     area: '',
-    image: null // file object
+    bhk: '',
+    listingType: 'Rent', // 'Rent' or 'Sale'
+    propertyType: 'Flats', // Default value
+    carpetArea: '',
+    builtUpArea: '',
+    images: [], // To handle multiple files
   });
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const propertyTypes = ['Flats', 'Builder Floors', 'House Villas', 'Plots', 'Farmhouses', 'Hotels', 'Lands', 'Office Spaces', 'Hostels', 'Shops Showrooms'];
+
   const handleChange = (e) => {
-    if (e.target.name === 'image') {
-      setForm({ ...form, image: e.target.files[0] });
+    const { name, value, files } = e.target;
+    if (name === 'images') {
+      setForm({ ...form, images: files });
     } else {
-      setForm({ ...form, [e.target.name]: e.target.value });
+      setForm({ ...form, [name]: value });
     }
   };
 
@@ -29,17 +35,28 @@ const AddProperty = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    try {
-      const formData = new FormData();
-      Object.keys(form).forEach((key) => {
+
+    const formData = new FormData();
+    // Append all form fields to formData
+    for (const key in form) {
+      if (key === 'images') {
+        for (let i = 0; i < form.images.length; i++) {
+          formData.append('images', form.images[i]);
+        }
+      } else {
         formData.append(key, form[key]);
-      });
+      }
+    }
+
+    try {
       await post('/properties', formData, true); // true = isFormData
       setSuccess('Property added successfully!');
+      // Reset form after submission
       setForm({
-        title: '', description: '', price: '', type: '', subCategory: '', location: '', area: '', image: null
+        title: '', description: '', price: '', location: '', area: '', bhk: '',
+        listingType: 'Rent', propertyType: 'Flats', carpetArea: '', builtUpArea: '', images: []
       });
-      navigate('/properties'); // ya navigate('/') for Home
+      navigate('/properties');
     } catch (err) {
       setError(err?.response?.data?.message || err.message || 'Failed to add property');
     }
@@ -58,12 +75,33 @@ const AddProperty = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <input name="title" value={form.title} onChange={handleChange} placeholder="Enter property title" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
           <textarea name="description" value={form.description} onChange={handleChange} placeholder="Describe the property" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
-          <input name="price" value={form.price} onChange={handleChange} placeholder="Enter price in INR" type="number" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
-          <input name="type" value={form.type} onChange={handleChange} placeholder="Type (e.g. Residential)" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
-          <input name="subCategory" value={form.subCategory} onChange={handleChange} placeholder="SubCategory (e.g. Villa)" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
-          <input name="location" value={form.location} onChange={handleChange} placeholder="Location" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
-          <input name="area" value={form.area} onChange={handleChange} placeholder="Area (sqft)" type="number" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
-          <input name="image" type="file" accept="image/*" onChange={handleChange} className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition" required />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input name="price" value={form.price} onChange={handleChange} placeholder="Price (INR)" type="number" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
+            <input name="area" value={form.area} onChange={handleChange} placeholder="Area (sqft)" type="number" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
+            <input name="bhk" value={form.bhk} onChange={handleChange} placeholder="BHK" type="number" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
+            <input name="location" value={form.location} onChange={handleChange} placeholder="Location" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <select name="listingType" value={form.listingType} onChange={handleChange} className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition shadow-sm">
+              <option value="Rent">For Rent</option>
+              <option value="Sale">For Sale</option>
+            </select>
+            <select name="propertyType" value={form.propertyType} onChange={handleChange} className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition shadow-sm">
+              {propertyTypes.map(type => <option key={type} value={type}>{type}</option>)}
+            </select>
+          </div>
+
+          {form.listingType === 'Sale' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
+              <input name="carpetArea" value={form.carpetArea} onChange={handleChange} placeholder="Carpet Area (sqft)" type="number" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
+              <input name="builtUpArea" value={form.builtUpArea} onChange={handleChange} placeholder="Built-up Area (sqft)" type="number" className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder-gray-400 shadow-sm" required />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Property Images</label>
+            <input name="images" type="file" accept="image/*" onChange={handleChange} multiple className="w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition" required />
+          </div>
           <button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-purple-600 text-white font-bold py-3 rounded-xl shadow-lg hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-orange-400 transition text-lg mt-2">Add Property</button>
         </form>
       </div>

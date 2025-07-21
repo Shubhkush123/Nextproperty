@@ -29,6 +29,7 @@ const Login = () => {
       const res = await post('/auth/login', form);
       setSuccess('Login successful!');
       localStorage.setItem('token', res.token);
+      localStorage.setItem('user', JSON.stringify(res.user)); // Save user object
       setTimeout(() => {
         navigate('/add-property');
       }, 1200);

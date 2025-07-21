@@ -21,12 +21,12 @@ const FilterBar = ({ filters, setFilters }) => (
     </select>
     <select
       className="border p-2 rounded"
-      value={filters.type || ''}
-      onChange={e => setFilters(f => ({ ...f, type: e.target.value }))}
+      value={filters.listingType || ''}
+      onChange={e => setFilters(f => ({ ...f, listingType: e.target.value }))}
     >
-      <option value="">All Types</option>
-      <option value="buy">Buy</option>
-      <option value="sell">Sell</option>
+      <option value="">All Listings</option>
+      <option value="Rent">Rent</option>
+      <option value="Sale">Sale</option>
     </select>
     <select
       className="border p-2 rounded"

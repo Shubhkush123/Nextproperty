@@ -6,7 +6,7 @@ import uploadMiddleware from '../middleware/uploadMiddleware.js';
 const router = express.Router();
 
 // Route to create a new property
-router.post('/', protect, propertyController.createProperty);
+router.post('/', protect, uploadMiddleware, propertyController.createProperty);
 
 // Route to get all properties
 router.get('/', propertyController.getAllProperties);
@@ -18,10 +18,7 @@ router.get('/my', protect, propertyController.getMyProperties);
 router.get('/:id', propertyController.getPropertyById);
 
 // PATCH route for partial updates
-router.patch('/:id', uploadMiddleware, propertyController.updateProperty);
-
-// Route to update a property by ID
-router.put('/properties/:id', uploadMiddleware, propertyController.updateProperty);
+router.patch('/:id', protect, propertyController.updateProperty);
 
 // Route to delete a property by ID
 router.delete('/:id', protect, propertyController.deleteProperty);

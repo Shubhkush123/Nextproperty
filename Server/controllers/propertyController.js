@@ -18,7 +18,7 @@ export const createProperty = async (req, res) => {
 // Get all properties
 export const getAllProperties = async (req, res) => {
     try {
-        const properties = await Property.find().populate('user', 'username email');
+        const properties = await Property.find().populate('user', '_id username email');
         res.status(200).json(properties);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -49,23 +49,72 @@ export const getPropertyById = async (req, res) => {
 // Update a property
 export const updateProperty = async (req, res) => {
   try {
-    console.log('Update request for ID:', req.params.id);
-    const updatedProperty = await Property.findOneAndUpdate({ _id: req.params.id }, req.body, { new: true });
-    if (!updatedProperty) return res.status(404).json({ message: 'Property not found' });
+    const property = await Property.findById(req.params.id);
+
+    if (!property) {
+      return res.status(404).json({ message: 'Property not found' });
+    }
+
+    // Authorization check: only admin or owner can update
+    if (req.user.role !== 'admin' && property.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'User not authorized to update this property' });
+    }
+    
+    // Update fields from request body
+    const { title, description, price, location, area, bhk, listingType, propertyType, carpetArea, builtUpArea } = req.body;
+    property.title = title;
+    property.description = description;
+    property.price = price;
+    property.location = location;
+    property.area = area;
+    property.bhk = bhk;
+    property.listingType = listingType;
+    property.propertyType = propertyType;
+
+    // Handle conditional fields
+    if (listingType === 'Sale') {
+      property.carpetArea = carpetArea;
+      property.builtUpArea = builtUpArea;
+    } else {
+      property.carpetArea = undefined;
+      property.builtUpArea = undefined;
+    }
+
+    // If new images were uploaded, replace the old ones.
+    // The upload middleware puts the new URLs in req.body.images.
+    if (typeof req.body.images === 'string') {
+      property.images = [req.body.images];
+    } else if (Array.isArray(req.body.images)) {
+      property.images = req.body.images;
+    }
+
+    const updatedProperty = await property.save();
     res.status(200).json(updatedProperty);
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Update Error:', error);
+    res.status(500).json({ message: 'Server error while updating property.' });
   }
 };
 
 // Delete a property
 export const deleteProperty = async (req, res) => {
     try {
-        console.log('Delete request for ID:', req.params.id);
-        const property = await Property.findByIdAndDelete(req.params.id);
-        if (!property) return res.status(404).json({ message: 'Not found' });
-        res.json({ message: 'Deleted successfully' });
+        const property = await Property.findById(req.params.id);
+
+        if (!property) {
+            return res.status(404).json({ message: 'Property not found' });
+        }
+
+        // Check if the user is an admin or the owner of the property
+        if (req.user.role !== 'admin' && property.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'User not authorized to delete this property' });
+        }
+
+        await property.remove();
+        res.json({ message: 'Property deleted successfully' });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 };
