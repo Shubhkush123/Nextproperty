@@ -18,7 +18,7 @@
     "jsdom": "^26.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.17.0",
-    "mongoose": "^8.16.4",
+    "mongoose": "^7.6.3",
     "multer": "^2.0.2",
     "punycode": "^2.3.1",
     "whatwg-url": "^14.2.0"
