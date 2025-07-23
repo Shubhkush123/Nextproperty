@@ -18,8 +18,7 @@ router.get('/my', protect, propertyController.getMyProperties);
 router.get('/:id', propertyController.getPropertyById);
 
 // PATCH route for partial updates
-router.patch('/:id', protect, propertyController.updateProperty);
-
+router.patch('/:id', protect, uploadMiddleware, propertyController.updateProperty);
 // Route to delete a property by ID
 router.delete('/:id', protect, propertyController.deleteProperty);
 

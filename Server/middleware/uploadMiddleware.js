@@ -1,61 +1,58 @@
 import multer from 'multer';
-import { v2 as cloudinaryV2 } from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
 
-// Configure Cloudinary (ensure environment variables are set)
-cloudinaryV2.config({
+// Cloudinary config
+cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Multer setup with memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// Middleware for uploading multiple images to Cloudinary
+// Middleware to upload multiple images to Cloudinary
 const uploadMiddleware = (req, res, next) => {
-  // Use upload.array to handle multiple files from a field named 'images'
   upload.array('images', 10)(req, res, async (err) => {
     if (err) {
       console.error('Multer Error:', err);
       return res.status(400).json({ message: 'Image upload failed', error: err.message });
     }
 
-    // If no files are attached, move to the next middleware
     if (!req.files || req.files.length === 0) {
-      return next();
+      return next(); // No files to upload
     }
 
     try {
-      const uploadPromises = req.files.map(file => {
+      const imageUploadPromises = req.files.map(file => {
         return new Promise((resolve, reject) => {
-          const uploadStream = cloudinaryV2.uploader.upload_stream(
-            { resource_type: 'image' },
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { resource_type: 'image', folder: 'properties' }, // optional folder
             (error, result) => {
-              if (error) {
-                return reject(error);
-              }
+              if (error) return reject(error);
               resolve(result.secure_url);
             }
           );
-          const stream = Readable.from(file.buffer);
-          stream.pipe(uploadStream);
+
+          const readableStream = Readable.from(file.buffer);
+          readableStream.pipe(uploadStream);
         });
       });
 
-      // Wait for all uploads to complete
-      const imageUrls = await Promise.all(uploadPromises);
-      
-      // Attach the array of URLs to the request body
-      req.body.images = imageUrls;
-      
+      const uploadedImageUrls = await Promise.all(imageUploadPromises);
+      req.body.images = uploadedImageUrls;
+
       next();
     } catch (error) {
       console.error('Cloudinary Upload Error:', error);
-      res.status(500).json({ message: 'Failed to upload images to Cloudinary.', error });
+      return res.status(500).json({
+        message: 'Failed to upload images to Cloudinary.',
+        error: error.message || error,
+      });
     }
   });
 };
 
 export default uploadMiddleware;
-

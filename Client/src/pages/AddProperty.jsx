@@ -109,4 +109,4 @@ const AddProperty = () => {
   );
 };
 
-export default AddProperty; 
+export default AddProperty;
